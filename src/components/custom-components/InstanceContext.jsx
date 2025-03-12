@@ -84,39 +84,3 @@ export function useInstance() {
 }
 
 export default InstanceContext;
-// // src/context/InstanceContext.jsx
-// import { createContext, useContext, useState } from "react";
-
-// // Create the context
-// const InstanceContext = createContext();
-
-// // Create a provider component
-// export function InstanceProvider({ children }) {
-//   const [intanceName, setIntanceName] = useState(null);
-//   const [intanceDataText, setIntanceDataText] = useState(null);
-
-//   // You can also add utility functions here if needed
-//   const updateInstanceData = (name, dataText) => {
-//     setIntanceName(name);
-//     setIntanceDataText(dataText);
-//   };
-
-//   return (
-//     <InstanceContext.Provider
-//       value={{ intanceName, setIntanceName, intanceDataText, setIntanceDataText, updateInstanceData }}
-//     >
-//       {children}
-//     </InstanceContext.Provider>
-//   );
-// }
-
-// // Custom hook to use the context
-// export function useInstance() {
-//   const context = useContext(InstanceContext);
-//   if (!context) {
-//     throw new Error("useInstance must be used within an InstanceProvider");
-//   }
-//   return context;
-// }
-
-// export default InstanceContext;
