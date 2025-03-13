@@ -179,7 +179,7 @@ const ScrollComponent = React.memo(({ mutationGraphicsStartStop, backupServerSta
       TextHeight: 100,
       TextColor: "FFFFFF",
       TextTransparency: 0,
-      Speed: 0,
+      Speed: 10,
       Direction: "Right to Left",
       Duration: 0,
       BoxHeight: 5,

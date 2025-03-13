@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { decryptData } from "@/utils/helpers/auth/encrypt-decrypt";
 import { useConfig } from "@/components/custom-components/ConfigContext";
+import { useInstance } from "@/components/custom-components/InstanceContext";
 
 function LobbyTable() {
   const {
@@ -36,6 +37,7 @@ function LobbyTable() {
     removeBackupConfig,
     clearAllConfigs,
   } = useConfig();
+  const { updateInstanceData } = useInstance();
   const [groupedServices, setGroupedServices] = useState({});
   const navigate = useNavigate();
   const [selectedService, setSelectedService] = useState(null);
@@ -114,17 +116,23 @@ function LobbyTable() {
           status.serviceUID === instanceData.mainServiceUID ||
           status.serviceUID === instanceData.backupServiceUID
       );
-      // console.log(selectedServiceStatus,"111111111111111111111111111s")
+
       if (
         selectedServiceStatus &&
         selectedServiceStatus.serviceState === "Encoding"
       ) {
-        // Swap logic happens **only here**
         let updatedInstanceData = { ...instanceData };
-        // console.log("qqqqqqqqqqqqqqqqqq",instanceData)
+        // Persist DataOFStatus in sessionStorage for refresh
         sessionStorage.setItem("DataOFStatus", JSON.stringify(instanceAllData));
+
+        // Update context for runtime use
         if (instanceAllData?.backupServiceUID) {
           if (instanceAllData.mainServiceUID === instanceData.mainServiceUID) {
+            updateInstanceData(
+              instanceData.mainServiceName || instanceData.backupServiceName,
+              "Primary",
+              instanceAllData
+            );
             sessionStorage.setItem(
               "instanceName",
               JSON.stringify(instanceData)
@@ -146,6 +154,12 @@ function LobbyTable() {
               backupServiceName: instanceAllData.mainServiceName,
               backupServiceUID: instanceAllData.mainServiceUID,
             };
+            updateInstanceData(
+              updatedInstanceData.mainServiceName ||
+                updatedInstanceData.backupServiceName,
+              "Backup",
+              updatedInstanceData
+            );
             sessionStorage.setItem(
               "instanceName",
               JSON.stringify(updatedInstanceData)
@@ -159,6 +173,12 @@ function LobbyTable() {
           instanceAllData.mainServiceUID &&
           !instanceAllData?.backupServiceUID
         ) {
+          updateInstanceData(
+            updatedInstanceData.mainServiceName ||
+              updatedInstanceData.backupServiceName,
+            "Primary",
+            updatedInstanceData
+          );
           sessionStorage.setItem(
             "instanceName",
             JSON.stringify(updatedInstanceData)
@@ -168,6 +188,7 @@ function LobbyTable() {
             JSON.stringify(updatedInstanceData)
           );
         }
+
         navigate("/dashboard");
       } else {
         setPopupMessage(
@@ -176,18 +197,21 @@ function LobbyTable() {
         setShowPopup(true);
       }
 
-      setLoading(false); // Reset loading state
-      setInstanceData(null); // Reset instance data
+      setLoading(false);
+      setInstanceData(null);
       setInstanceAllData(null);
       sessionStorage.removeItem("mainTokenData");
       sessionStorage.removeItem("backupTokenData");
-      // sessionStorage.removeItem("backupServicesConfig");
-      // sessionStorage.removeItem("mainServicesConfig");
       removeMainConfig();
       removeBackupConfig();
     }
-  }, [serversStatus, instanceData, serversIsLoading]);
-
+  }, [
+    serversStatus,
+    instanceData,
+    instanceAllData,
+    serversIsLoading,
+    updateInstanceData,
+  ]);
   const handleInstancechange = (service, serviceName) => {
     if (loading) return; // Prevent multiple clicks while loading
     setLoading(true); // Set loading state to true

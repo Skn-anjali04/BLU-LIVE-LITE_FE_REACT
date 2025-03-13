@@ -45,7 +45,7 @@ export function Navbar() {
           className="h-8 w-auto"
         />
       </div>
-      {showInstanceInfo && instanceName && (
+      {showInstanceInfo && instanceName && instanceDataText&& (
         <h1 className="text-xl font-bold">
           {instanceName}
           {instanceDataText && ` (${instanceDataText})`}

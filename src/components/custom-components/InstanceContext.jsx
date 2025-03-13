@@ -8,53 +8,42 @@ export function InstanceProvider({ children }) {
   const [instanceName, setInstanceName] = useState(null);
   const [instanceDataText, setInstanceDataText] = useState(null);
   const [isInstanceLoaded, setIsInstanceLoaded] = useState(false);
+  const [instanceAllData, setInstanceAllData] = useState(null); // Holds DataOFStatus
 
-  // Initialize from sessionStorage on mount
+  // Initialize from sessionStorage only on mount (e.g., page refresh)
   useEffect(() => {
-    const initializeInstance = () => {
+    const initializeFromSessionStorage = () => {
       const instanceNameData = JSON.parse(sessionStorage.getItem("instanceName"));
-      const instanceData = JSON.parse(sessionStorage.getItem("DataOFStatus"));
+      const instanceAllDataFromSession = JSON.parse(sessionStorage.getItem("DataOFStatus"));
 
-      if (instanceNameData && instanceData) {
+      // Set instanceName from sessionStorage if available
+      if (instanceNameData) {
         const { mainServiceName, backupServiceName, mainServiceUID } = instanceNameData;
-        const { mainServiceUID: mainServiceUIDText } = instanceData;
-
-        const dataText = mainServiceUID === mainServiceUIDText ? "Primary" : "Backup";
         const name = mainServiceName || backupServiceName;
-
         setInstanceName(name);
-        setInstanceDataText(dataText);
+
+        // If DataOFStatus exists, set instanceAllData and derive instanceDataText
+        if (instanceAllDataFromSession) {
+          setInstanceAllData(instanceAllDataFromSession);
+          const dataText = mainServiceUID === instanceAllDataFromSession.mainServiceUID ? "Primary" : "Backup";
+          setInstanceDataText(dataText);
+        }
         setIsInstanceLoaded(true);
-      } else {
-        // Poll sessionStorage if data isn’t available yet
-        const interval = setInterval(() => {
-          const instanceNameDataPoll = JSON.parse(sessionStorage.getItem("instanceName"));
-          const instanceDataPoll = JSON.parse(sessionStorage.getItem("DataOFStatus"));
-
-          if (instanceNameDataPoll && instanceDataPoll) {
-            const { mainServiceName, backupServiceName, mainServiceUID } = instanceNameDataPoll;
-            const { mainServiceUID: mainServiceUIDText } = instanceDataPoll;
-
-            const dataText = mainServiceUID === mainServiceUIDText ? "Primary" : "Backup";
-            const name = mainServiceName || backupServiceName;
-
-            setInstanceName(name);
-            setInstanceDataText(dataText);
-            setIsInstanceLoaded(true);
-            clearInterval(interval);
-          }
-        }, 1000);
-
-        return () => clearInterval(interval);
+      } else if (instanceAllDataFromSession) {
+        // If only DataOFStatus exists (no instanceName), still set instanceAllData
+        setInstanceAllData(instanceAllDataFromSession);
+        setIsInstanceLoaded(true);
       }
     };
 
-    initializeInstance();
-  }, []);
+    initializeFromSessionStorage();
+  }, []); // Empty dependency array ensures this runs only on mount (page refresh)
 
-  const updateInstanceData = (name, dataText) => {
+  // Function to update all instance-related data during runtime
+  const updateInstanceData = (name, dataText, allData) => {
     setInstanceName(name);
     setInstanceDataText(dataText);
+    setInstanceAllData(allData); // Update instanceAllData directly
     setIsInstanceLoaded(true);
   };
 
@@ -66,6 +55,8 @@ export function InstanceProvider({ children }) {
         instanceDataText,
         setInstanceDataText,
         isInstanceLoaded,
+        instanceAllData, // Expose instanceAllData
+        setInstanceAllData, // Expose setter for runtime updates
         updateInstanceData,
       }}
     >
