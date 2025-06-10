@@ -9,7 +9,7 @@ const Command = React.forwardRef(({ className, ...props }, ref) => (
   <CommandPrimitive
     ref={ref}
     className={cn(
-      "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
+      "flex h-full w-full flex-col overflow-hidden rounded-md",
       className
     )}
     {...props} />
@@ -57,7 +57,7 @@ const CommandList = React.forwardRef(({ className, ...props }, ref) => (
 CommandList.displayName = CommandPrimitive.List.displayName
 
 const CommandEmpty = React.forwardRef((props, ref) => (
-  <CommandPrimitive.Empty ref={ref} className="py-6 text-center text-sm" {...props} />
+  <CommandPrimitive.Empty ref={ref} className="py-6 text-center text-sm text-white" {...props} />
 ))
 
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName

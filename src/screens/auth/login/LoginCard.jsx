@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useApiMutation } from "@/utils/helpers/api/apihooks/useApiMutation";
 import { getLoginPath } from "@/utils/helpers/api/apiConstant";
-import forge from 'node-forge'
+import forge from 'node-forge';
 import { encryptData } from "@/utils/helpers/auth/encrypt-decrypt";
 const publicKeyPem = `-----BEGIN PUBLIC KEY-----
 MIIBITANBgkqhkiG9w0BAQEFAAOCAQ4AMIIBCQKCAQB3QOS0UpIZnW+f50H+09cx
@@ -151,26 +151,32 @@ const LoginCard = () => {
                   )}
                 </div>
 
-                <div className="relative">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    placeholder="Password"
-                    value={values.password}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className="bg-transparent border-0 border-b-2 border-white rounded-none px-0 h-12 text-white font-bold focus-visible:border-white focus-visible:ring-0 pr-10"
-                  />
-                  <span
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer text-white hover:text-white"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5 mb-1" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </span>
+               
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3 border-b-2 border-white">
+                    <div className="flex-1">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        placeholder="Password"
+                        value={values.password}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        className="bg-transparent border-0 rounded-none px-0 h-12 text-white font-medium focus-visible:ring-0 placeholder-red-500"
+                      />
+                    </div>
+                    <div
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="cursor-pointer text-white hover:text-white"
+                      aria-label="Toggle password visibility"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </div>
+                  </div>
                   {errors.password && touched.password && (
                     <div className="text-red-500 text-sm font-bold mt-1">
                       {errors.password}

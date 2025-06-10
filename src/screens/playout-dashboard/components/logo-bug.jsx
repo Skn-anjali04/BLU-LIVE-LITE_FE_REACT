@@ -165,6 +165,7 @@ const LogoBugComponents = React.memo(
           ...logoInsertions[logoInsertionIndex],
           FileName: selectedLogoBug,
           Enable: true,
+          PositionUnit:"Pixel",
           Top: 0,
           Left: 0,
           Size: 1000,
@@ -188,6 +189,7 @@ const LogoBugComponents = React.memo(
             FileName: selectedLogoBug,
             Enable: true,
             Top: 0,
+            PositionUnit:"Pixel",
             Left: 0,
             Size: 1000,
           };
@@ -364,7 +366,8 @@ const LogoBugComponents = React.memo(
         mainServiceToken &&
         activeLogoText &&
         backupServiceToken &&
-        updatedConfigStopBackup
+        updatedConfigStopBackup&&
+        selectedLogoBug
       ) {
         payload = {
           mainServiceUID: mainServiceUIDPayload,
@@ -372,7 +375,7 @@ const LogoBugComponents = React.memo(
           mainServiceAddress: mainServerAddressPayload,
           mainServiceToken: mainServiceToken,
           mainServiceName: mainServiceNamePayload,
-          graphicName: activeLogoText,
+          graphicName: selectedLogoBug,
           graphicType: "logo",
           graphicAction: "stop",
           isBackupAvailable: true,
@@ -388,7 +391,8 @@ const LogoBugComponents = React.memo(
         mainServerAddressPayload &&
         activeLogoText &&
         !backupServerAddressPayload &&
-        !backupServiceUIDPayload
+        !backupServiceUIDPayload&&
+        selectedLogoBug
       ) {
         payload = {
           mainServiceUID: mainServiceUIDPayload,
@@ -396,7 +400,7 @@ const LogoBugComponents = React.memo(
           mainServiceAddress: mainServerAddressPayload,
           mainServiceToken: mainServiceToken,
           mainServiceName: mainServiceNamePayload,
-          graphicName: activeLogoText,
+          graphicName: selectedLogoBug,
           graphicType: "logo",
           graphicAction: "stop",
           isBackupAvailable: false,

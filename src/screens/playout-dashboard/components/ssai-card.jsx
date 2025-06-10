@@ -59,11 +59,11 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
           setRemainingTime(parseInt(formik.values.duration, 10));
           setIsRunning(true);
 
-          localStorage.setItem("ssaiDuration", formik.values.duration.toString());
-          localStorage.setItem("ssaiStartTime", now.toString());
-          localStorage.setItem("repeatInterval", formik.values.repeatInterval.toString());
-          localStorage.setItem("autoSCTE", formik.values.autoSCTE.toString());
-          localStorage.setItem("cueouttype", "true");
+          sessionStorage.setItem("ssaiDuration", formik.values.duration.toString());
+          sessionStorage.setItem("ssaiStartTime", now.toString());
+          sessionStorage.setItem("repeatInterval", formik.values.repeatInterval.toString());
+          sessionStorage.setItem("autoSCTE", formik.values.autoSCTE.toString());
+          sessionStorage.setItem("cueouttype", "true");
           setCueInFlag(false);
         }
       },
@@ -83,13 +83,13 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
     method: "POST",
     options: {
       onSuccess: (data) => {
-        localStorage.setItem("cueouttype", "false");
+        sessionStorage.setItem("cueouttype", "false");
         setCueInFlag(true);
-        localStorage.removeItem("ssaiDuration");
-        localStorage.removeItem("ssaiStartTime");
-        localStorage.removeItem("ssaiEndTime");
-        localStorage.removeItem("repeatInterval");
-        localStorage.removeItem("autoSCTE");
+        sessionStorage.removeItem("ssaiDuration");
+        sessionStorage.removeItem("ssaiStartTime");
+        sessionStorage.removeItem("ssaiEndTime");
+        sessionStorage.removeItem("repeatInterval");
+        sessionStorage.removeItem("autoSCTE");
         setCueInFlag(false);
         clearInterval(intervalId);
         setIntervalId(null);
@@ -258,10 +258,10 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
     const data = SctyNewData?.data?.data;
 
     if (data && Object.keys(data).length === 0) {
-      localStorage.removeItem("ssaiDuration");
-      localStorage.removeItem("ssaiStartTime");
-      localStorage.removeItem("ssaiEndTime");
-      localStorage.removeItem("cueouttype");
+      sessionStorage.removeItem("ssaiDuration");
+      sessionStorage.removeItem("ssaiStartTime");
+      sessionStorage.removeItem("ssaiEndTime");
+      sessionStorage.removeItem("cueouttype");
       return;
     }
     if (data) {
@@ -279,19 +279,19 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
           setRemainingTime(remaining);
           setIsRunning(true);
 
-          localStorage.setItem("ssaiDuration", duration.toString());
-          localStorage.setItem("ssaiStartTime", startTimeConverted.toString());
-          localStorage.setItem("ssaiEndTime", end.toString());
+          sessionStorage.setItem("ssaiDuration", duration.toString());
+          sessionStorage.setItem("ssaiStartTime", startTimeConverted.toString());
+          sessionStorage.setItem("ssaiEndTime", end.toString());
         }
       }
     }
   }, [SctyNewData]);
 
   useEffect(() => {
-    const savedDuration = localStorage.getItem("ssaiDuration");
-    const savedStartTime = localStorage.getItem("ssaiStartTime");
-    const savedRepeatInterval = localStorage.getItem("repeatInterval");
-    const savedAutoSCTE = localStorage.getItem("autoSCTE");
+    const savedDuration = sessionStorage.getItem("ssaiDuration");
+    const savedStartTime = sessionStorage.getItem("ssaiStartTime");
+    const savedRepeatInterval = sessionStorage.getItem("repeatInterval");
+    const savedAutoSCTE = sessionStorage.getItem("autoSCTE");
 
     if (savedDuration && savedStartTime) {
       const parsedDuration = parseInt(savedDuration, 10);
@@ -313,8 +313,8 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
         formik.setFieldValue("autoSCTE", parsedAutoSCTE);
 
         if (updatedRemainingTime <= 0) {
-          localStorage.removeItem("ssaiDuration");
-          localStorage.removeItem("ssaiStartTime");
+          sessionStorage.removeItem("ssaiDuration");
+          sessionStorage.removeItem("ssaiStartTime");
         }
       }
     }
@@ -323,8 +323,8 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (isRunning && remainingTime > 0) {
-        localStorage.setItem("ssaiDuration", formik.values.duration.toString());
-        localStorage.setItem("ssaiStartTime", startTime.toString());
+        sessionStorage.setItem("ssaiDuration", formik.values.duration.toString());
+        sessionStorage.setItem("ssaiStartTime", startTime.toString());
       }
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -343,9 +343,9 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
         const updatedRemainingTime = Math.max(parseInt(formik.values.duration, 10) - elapsedTime, 0);
         if (!formik.values.autoSCTE) {
           if (updatedRemainingTime > 0) {
-            localStorage.setItem("cueouttype", "true");
+            sessionStorage.setItem("cueouttype", "true");
           } else {
-            localStorage.setItem("cueouttype", "false");
+            sessionStorage.setItem("cueouttype", "false");
           }
         }
         setRemainingTime(updatedRemainingTime);
@@ -359,7 +359,7 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
     return () => clearInterval(interval);
   }, [isRunning, remainingTime, startTime]);
 
-  let cueOutFlag = localStorage.getItem("cueouttype");
+  let cueOutFlag = sessionStorage.getItem("cueouttype");
   useEffect(() => {
     if (
       !mutationCueOut.isPending &&

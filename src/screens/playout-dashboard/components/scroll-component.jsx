@@ -170,24 +170,26 @@ const ScrollComponent = React.memo(({ mutationGraphicsStartStop, backupServerSta
       return;
     }
 
-    const updatedConfig = cloneDeep(ScrollConfig);
-    let CreateScrollObj = {
-      Enabled: true,
-      Emulation: false,
-      Text: selectedScroll,
-      FontFile: "default.ttf",
-      TextHeight: 100,
-      TextColor: "FFFFFF",
-      TextTransparency: 0,
-      Speed: 10,
-      Direction: "Right to Left",
-      Duration: 0,
-      BoxHeight: 5,
-      BoxWidth: 80,
-      BoxColor: "000000",
-      BoxTransparency: 100,
-      BoxVerticalPosition: 85,
-    };
+      const updatedConfig = cloneDeep(ScrollConfig);
+      let CreateScrollObj = {
+        BoxColor: "000000",
+        BoxHeight: 5,
+        BoxTransparency: 100,
+        BoxVerticalPosition: 85,
+        BoxWidth: 100,
+        Direction: "Right to Left",
+        Duration: 0,
+        Emulation: false,
+        Enabled: true,
+        FontFile: "default.ttf",
+        LoopNumber: 10,
+        ScreenTime: 7000,
+        ScrollConfiguration: "Screen Time + Duration",
+        Text: selectedScroll,
+        TextColor: "FFFFFF",
+        TextHeight: 100,
+        TextTransparency: 0,
+      };
 
     if (updatedConfig.Device.Template.Tracks.VideoTracks[0].ScrollingTexts?.length === 0) {
       updatedConfig.Device.Template.Tracks.VideoTracks[0].ScrollingTexts = [CreateScrollObj];

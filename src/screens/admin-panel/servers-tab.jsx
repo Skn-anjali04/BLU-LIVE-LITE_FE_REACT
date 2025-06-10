@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -22,20 +22,25 @@ import {
 } from "@/utils/helpers/api/apiConstant";
 import CustomLoader from "@/components/custom-components/custom-loader";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useApiGetQuery } from "@/utils/helpers/api/apihooks/useApiGetQuery";
+import { cn } from "@/lib/utils";
+import Combobox from "@/components/custom-components/ComboBox";
 
 export const ServersTab = React.memo(
   ({ data, isLoading, isError, error, refetch, refachUser }) => {
     const serverListData = data?.data?.data || [];
+
+    // Initialize state from sessionStorage with keys specific to ServersTab
     const [addServerOpen, setAddServerOpen] = useState(false);
-    const [mainSelectedIp, setMainSelectedIp] = useState(null);
+    const [selectedServerIp, setSelectedServerIp] = useState(() => {
+      return sessionStorage.getItem("serversTab_selectedServerIp") || null;
+    });
+    const [activeIp, setActiveIp] = useState(() => {
+      return sessionStorage.getItem("serversTab_activeIp") || null;
+    });
+    const [activeTab, setActiveTab] = useState(() => {
+      return sessionStorage.getItem("serversTab_activeTab") || "main";
+    });
     const [selectedServer, setSelectedServer] = useState(null);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [actionConfig, setActionConfig] = useState({
@@ -44,20 +49,29 @@ export const ServersTab = React.memo(
       onConfirm: null,
     });
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedServerId, setSelectedServerId] = useState(null);
+    const [selectedServerId, setSelectedServerId] = useState(() => {
+      return sessionStorage.getItem("serversTab_selectedServerId") || null;
+    });
 
+    // Save state to sessionStorage whenever it changes
+    useEffect(() => {
+      sessionStorage.setItem("serversTab_selectedServerIp", selectedServerIp || "");
+      sessionStorage.setItem("serversTab_activeIp", activeIp || "");
+      sessionStorage.setItem("serversTab_activeTab", activeTab);
+      sessionStorage.setItem("serversTab_selectedServerId", selectedServerId || "");
+    }, [selectedServerIp, activeIp, activeTab, selectedServerId]);
+
+    // Memoized server options for Combobox
     const serverOptions = useMemo(() => {
-      return serverListData.map((server, index) => {
+      return serverListData.map((server) => {
         const serverId = server?._id;
         const displayValue =
           server.mainServerDns?.trim() || server.mainServerAddress?.trim();
         const combinedValue = JSON.stringify({ serverId, displayValue });
-
-        return (
-          <SelectItem key={index} value={combinedValue}>
-            {displayValue}
-          </SelectItem>
-        );
+        return {
+          value: combinedValue,
+          label: displayValue,
+        };
       });
     }, [serverListData]);
 
@@ -65,82 +79,140 @@ export const ServersTab = React.memo(
     const selectedServerObject = useMemo(() => {
       return serverListData.find(
         (server) =>
-          server.mainServerDns?.trim() === mainSelectedIp ||
-          server.mainServerAddress?.trim() === mainSelectedIp
+          server.mainServerDns?.trim() === selectedServerIp ||
+          server.mainServerAddress?.trim() === selectedServerIp
       );
-    }, [mainSelectedIp, serverListData]);
+    }, [selectedServerIp, serverListData]);
+
+    // Validate persisted server data and reset if invalid
+    useEffect(() => {
+      if (selectedServerIp && !selectedServerObject) {
+        setSelectedServerIp(null);
+        setSelectedServerId(null);
+        setActiveIp(null);
+        setActiveTab("main");
+        sessionStorage.removeItem("serversTab_selectedServerIp");
+        sessionStorage.removeItem("serversTab_activeIp");
+        sessionStorage.removeItem("serversTab_activeTab");
+        sessionStorage.removeItem("serversTab_selectedServerId");
+      }
+    }, [selectedServerIp, selectedServerObject]);
+
+    // Determine the IP to fetch based on the active tab
+    useEffect(() => {
+      if (!selectedServerIp) {
+        setActiveIp(null);
+        setActiveTab("main");
+        return;
+      }
+      if (activeTab === "main") {
+        setActiveIp(selectedServerIp);
+      } else if (
+        activeTab === "backup" &&
+        selectedServerObject?.backupServerAddress
+      ) {
+        setActiveIp(selectedServerObject.backupServerAddress);
+      }
+    }, [selectedServerIp, activeTab, selectedServerObject]);
 
     const {
       data: serversServicData,
       isLoading: isLoadingserversServic,
       refetch: refetchserversServic,
-      isError:isErrorserversServic,
-      error:errorserversServic
-  } = useApiGetQuery({
-      key: ["serversServic", mainSelectedIp],
+      isError: isErrorserversServic,
+      error: errorserversServic,
+    } = useApiGetQuery({
+      key: ["serversServic", activeIp],
       endpoint: getAllServersPath,
-      params: { address: mainSelectedIp },
+      params: { address: activeIp },
       options: {
-          staleTime: 0,  // No stale data
-          cacheTime: 0,  // Prevent caching
-          refetchOnMount: true,  // Always fetch fresh data
-          refetchOnWindowFocus: false, // Don't fetch on tab switch
-          retry: false,
-          enabled: !!mainSelectedIp,
-          initialData: { data: { data: [] } }, // Ensure clean initial state
+        staleTime: 0,
+        cacheTime: 0,
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+        retry: false,
+        enabled: !!activeIp,
       },
-  });
-  
- 
+    });
+
     useEffect(() => {
       const errorMessageServic = errorserversServic?.response?.data?.message;
-      const errorMessagedecServic = errorserversServic?.response?.data?.error?.message;
-      if(isErrorserversServic&&errorMessagedecServic){
+      const errorMessagedecServic =
+        errorserversServic?.response?.data?.error?.message;
+      if (isErrorserversServic && errorMessagedecServic) {
         toast({
-          title:  errorMessageServic,
-          description: errorMessagedecServic,
+          title: errorMessageServic || "Error",
+          description: errorMessagedecServic || "Something went wrong.",
           variant: "destructive",
         });
       }
-    }, [isErrorserversServic,errorserversServic])
-    
-    if (isLoadingserversServic) {
-      return <CustomLoader />;
-  }
+    }, [isErrorserversServic, errorserversServic]);
+
     // Update server data when API response changes
     const serverData = useMemo(() => {
       return serversServicData?.data?.data || [];
     }, [serversServicData]);
 
-    // const handleServerChange = useCallback((combinedValue) => {
-    //   // Parse the JSON string to get serverId and displayValue
-    //   const { serverId, displayValue } = JSON.parse(combinedValue);
-    //   setSelectedServerId(serverId);
-    //   setMainSelectedIp(displayValue); // Update the selected IP
-    //   queryClient.setQueryData(["serversServic", displayValue], { data: { data: [] } });
-    //   // Fetch fresh data
-    //   refetchserversServic();
-    // }, []);
+  
 
-    // Handle backup IP button click
-    const handleServerChange = useCallback(async (combinedValue) => {
-      const { serverId, displayValue } = JSON.parse(combinedValue);
-      setSelectedServerId(serverId);
-      setMainSelectedIp(displayValue);
-  
-      // 1️⃣ Manually clear stale data before fetching
-      queryClient.setQueryData(["serversServic", displayValue], { data: { data: [] } });
-  
-      // 2️⃣ Force refetch after resetting data
+const handleServerChange = useCallback(
+  async (combinedValue) => {
+    // If combinedValue is empty or invalid, and a server is already selected, do nothing
+    if (!combinedValue && selectedServerIp && selectedServerId) {
+      return; // Prevent clearing state when re-selecting the same or invalid value
+    }
+
+    // If combinedValue is empty, clear the state
+    if (!combinedValue) {
+      setSelectedServerId(null);
+      setSelectedServerIp(null);
+      setActiveIp(null);
+      setActiveTab("main");
+      sessionStorage.setItem("serversTab_selectedServerIp", "");
+      sessionStorage.setItem("serversTab_activeIp", "");
+      sessionStorage.setItem("serversTab_activeTab", "main");
+      sessionStorage.setItem("serversTab_selectedServerId", "");
+      return;
+    }
+
+    let parsedValue;
+    try {
+      parsedValue = JSON.parse(combinedValue);
+    } catch (e) {
+      console.error("Invalid combinedValue format:", combinedValue);
+      return; // Prevent processing invalid JSON
+    }
+
+    const { serverId, displayValue } = parsedValue;
+
+    // Check if the selected value is the same as the current one
+    if (displayValue === selectedServerIp && serverId === selectedServerId) {
+      return; // No change needed, prevent unnecessary updates
+    }
+
+    // Update state and sessionStorage for new selection
+    setSelectedServerId(serverId);
+    setSelectedServerIp(displayValue);
+    setActiveTab("main");
+    setActiveIp(displayValue);
+    sessionStorage.setItem("serversTab_selectedServerIp", displayValue);
+    sessionStorage.setItem("serversTab_activeIp", displayValue);
+    sessionStorage.setItem("serversTab_activeTab", "main");
+    sessionStorage.setItem("serversTab_selectedServerId", serverId);
+
+    // Only refetch if activeIp is set and different from the new displayValue
+    if (activeIp && activeIp !== displayValue) {
       await refetchserversServic();
-  }, []);
-  
-    
-    const handleBackupIpClick = useCallback(() => {
-      if (selectedServerObject?.backupServerAddress) {
-        setMainSelectedIp(selectedServerObject.backupServerAddress);
-      }
-    }, [selectedServerObject]);
+    }
+  },
+  [refetchserversServic, selectedServerIp, selectedServerId, activeIp]
+);
+
+    // Handle tab switch (Main/Backup)
+    const handleTabSwitch = useCallback(async (tab) => {
+      setActiveTab(tab);
+      sessionStorage.setItem("serversTab_activeTab", tab);
+    }, []);
 
     // Mutation for unassigning operators
     const mutationUnassignOperater = useApiMutation({
@@ -158,15 +230,13 @@ export const ServersTab = React.memo(
               variant: "success",
             });
           }
-       
         },
         onError: (error) => {
-          // const errorMessage =
-          //   error.response?.data?.message || "Error occurred.";
-          const errorMessage = error.response?.data?.message ||"Error";
-          const errorMessagedec = error.response?.data?.error?.message||"Something went wrong.";
+          const errorMessage = error.response?.data?.message || "Error";
+          const errorMessagedec =
+            error.response?.data?.error?.message || "Something went wrong.";
           toast({
-            title: errorMessage ,
+            title: errorMessage,
             description: errorMessagedec,
             variant: "destructive",
           });
@@ -191,13 +261,13 @@ export const ServersTab = React.memo(
           description: `Are you sure you want to remove "${user}" from this server? This action cannot be undone.`,
           onConfirm: () => {
             mutationUnassignOperater.mutate({ payload });
-            setIsAlertOpen(false); // Ensure dialog closes after mutation
+            setIsAlertOpen(false);
           },
         });
 
-        setIsAlertOpen(true); // Open dialog
+        setIsAlertOpen(true);
       },
-      [mutationUnassignOperater]
+      [mutationUnassignOperater, selectedServerId]
     );
 
     // Mutation for assigning operators
@@ -218,8 +288,9 @@ export const ServersTab = React.memo(
           refachUser();
         },
         onError: (error) => {
-          const errorMessage = error.response?.data?.message||"Error";
-          const errorMessagedec = error.response?.data?.error?.message ||"Something went wrong.";
+          const errorMessage = error.response?.data?.message || "Error";
+          const errorMessagedec =
+            error.response?.data?.error?.message || "Something went wrong.";
           toast({
             title: errorMessage,
             description: errorMessagedec,
@@ -229,7 +300,6 @@ export const ServersTab = React.memo(
       },
     });
 
-    // Handle assigning users
     const handleAssignUsers = useCallback(
       (users) => {
         mutationAssignOperater.mutate({ payload: users });
@@ -237,7 +307,6 @@ export const ServersTab = React.memo(
       [mutationAssignOperater]
     );
 
-    // Handle edit click
     const handleEditClick = useCallback((server) => {
       setSelectedServer(server);
       setIsDialogOpen(true);
@@ -255,109 +324,127 @@ export const ServersTab = React.memo(
       <>
         <Card className="border-0">
           <CardHeader className="p-4">
-            <div className="flex justify-between items-center">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 xl:px-6">
+              {/* Left Section */}
+              <div className="flex flex-col sm:flex-row sm:items-end flex-wrap gap-4">
                 {serverListData.length > 0 && (
-                  <div className="flex gap-6">
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-4">
                     <div className="flex flex-col">
                       <Label className="mb-2">Server IP</Label>
-                      {/* <Select
-                        value={mainSelectedIp}
+                      <Combobox
+                        name="serverIp"
+                        value={
+                          selectedServerIp
+                            ? JSON.stringify({
+                                serverId: selectedServerObject?._id,
+                                displayValue: selectedServerIp,
+                              })
+                            : ""
+                        }
                         onValueChange={handleServerChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Server" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#3A3A3A] border-0 text-white hover:bg-[#444444]">
-                          {serverOptions}
-                        </SelectContent>
-                      </Select> */}
-                      <Select
-                        value={JSON.stringify({
-                          serverId: selectedServerObject?._id,
-                          displayValue: mainSelectedIp,
-                        })}
-                        onValueChange={handleServerChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue>
-                            {/* Display the currently selected IP */}
-                            {mainSelectedIp || "Select Server"}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#3A3A3A] border-0 text-white hover:bg-[#444444]">
-                          {serverOptions}
-                        </SelectContent>
-                      </Select>
+                        options={serverOptions}
+                        placeholder="Select Server"
+                        searchPlaceholder="Search server..."
+                        noDataMessage="No servers found."
+                        isLoading={isLoading}
+                      />
                     </div>
+
                     {selectedServerObject?.backupServerAddress && (
-                    <div className="flex flex-col">
-                      <Label className="mb-2">Backup IP</Label>
-                    
-                        <Button
-                          className="bg-[#3A3A3A] hover:bg-[#444444] text-white"
-                          onClick={handleBackupIpClick}
-                        >
-                          {selectedServerObject.backupServerAddress}
-                        </Button>
-                
-                    </div>
-                    
-                  )}
+                      <div className="flex gap-2 flex-wrap">
+                        <div className="flex flex-col">
+                          <Label className="mb-2">Primary IP</Label>
+                          <Button
+                            className={cn(
+                              "bg-[#3A3A3A] hover:bg-[#444444] text-white",
+                              activeTab === "main" && "bg-[#555555]"
+                            )}
+                            onClick={() => handleTabSwitch("main")}
+                          >
+                            {selectedServerIp || "N/A"}
+                          </Button>
+                        </div>
+                        <div className="flex flex-col">
+                          <Label className="mb-2">Backup IP</Label>
+                          <Button
+                            className={cn(
+                              "bg-[#3A3A3A] hover:bg-[#444444] text-white",
+                              activeTab === "backup" && "bg-[#555555]"
+                            )}
+                            onClick={() => handleTabSwitch("backup")}
+                          >
+                            {selectedServerObject.backupServerAddress}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              <Button
-                className="text-black text-base"
-                onClick={() => setAddServerOpen(true)}
-              >
-                + Add Server
-              </Button>
+              {/* Right Section */}
+              <div className="flex sm:justify-end">
+                <Button
+                  className="text-black text-base"
+                  onClick={() => setAddServerOpen(true)}
+                >
+                  + Add Server
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            {isLoadingserversServic ? (
-              <CustomLoader />
-            ) : (
-              <div className="overflow-x-auto">
-                <Table className="table-base">
-                  <TableHeader>
-                    <TableRow className="table-header">
-                      <TableHead>Service Name</TableHead>
-                      <TableHead>UID</TableHead>
-                      <TableHead>Assigned to</TableHead>
-                      {selectedServerObject?.mainServerAddress && (
-                      <TableHead>Actions</TableHead>)}
+            <div className="overflow-x-auto">
+              <Table className="table-base">
+                <TableHeader>
+                  <TableRow className="table-header">
+                    <TableHead>Service Name</TableHead>
+                    <TableHead>UID</TableHead>
+                    <TableHead>Assigned to</TableHead>
+                    {selectedServerObject?.mainServerAddress && (
+                      <TableHead>Actions</TableHead>
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="overflow-hidden">
+                  {isLoadingserversServic ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-6">
+                        <CustomLoader />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {serverData.length > 0 ? (
-                      serverData.map((server) => (
-                        <TableRow key={server.serviceUID} className="table-row">
-                          <TableCell className="rounded-l-md">
-                            {server.serviceName}
-                          </TableCell>
-                          <TableCell>{server.serviceUID}</TableCell>
-                          <TableCell className={`${!selectedServerObject?.mainServerAddress ? 'rounded-r-md p-2' : ''}`}>
-
-                            <div className="table-actions">
-                              {server.operatorsAssigned?.map((user) => (
-                                <span key={user} className="badge">
-                                  {user}
-                                  {selectedServerObject?.mainServerAddress && (
-                                    <X
-                                      className="h-4 w-4 cursor-pointer transition-colors hover:text-red-500"
-                                      onClick={() =>
-                                        handleRemoveUser(server, user)
-                                      }
-                                    />
-                                  )}
-                                </span>
-                              ))}
-                            </div>
-                          </TableCell>
-                          {selectedServerObject?.mainServerAddress && ( <TableCell className="rounded-r-md p-2">
+                  ) : serverData.length > 0 ? (
+                    serverData.map((server) => (
+                      <TableRow key={server.serviceUID} className="table-row">
+                        <TableCell className="rounded-l-md">
+                          {server.serviceName}
+                        </TableCell>
+                        <TableCell>{server.serviceUID}</TableCell>
+                        <TableCell
+                          className={`${
+                            !selectedServerObject?.mainServerAddress
+                              ? "rounded-r-md p-2"
+                              : ""
+                          }`}
+                        >
+                          <div className="table-actions">
+                            {server.operatorsAssigned?.map((user) => (
+                              <span key={user} className="badge">
+                                {user}
+                                {selectedServerObject?.mainServerAddress && (
+                                  <X
+                                    className="h-4 w-4 cursor-pointer transition-colors hover:text-red-500"
+                                    onClick={() =>
+                                      handleRemoveUser(server, user)
+                                    }
+                                  />
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        </TableCell>
+                        {selectedServerObject?.mainServerAddress && (
+                          <TableCell className="rounded-r-md p-2">
                             <Button
                               variant="ghost"
                               className="btn-pencil"
@@ -366,22 +453,22 @@ export const ServersTab = React.memo(
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                          </TableCell>)}
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4}>
-                          <div className="flex justify-center items-center py-6">
-                            No Servers Found
-                          </div>
-                        </TableCell>
+                          </TableCell>
+                        )}
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4}>
+                        <div className="flex justify-center items-center py-6">
+                          No Servers Found
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 
@@ -419,4 +506,3 @@ export const ServersTab = React.memo(
     );
   }
 );
-

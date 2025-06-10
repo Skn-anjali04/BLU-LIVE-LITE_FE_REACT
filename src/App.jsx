@@ -13,10 +13,10 @@ import { Button } from "./components/ui/button";
 import footerLogo from "@/assets/images/app-white-logo-footer.png";
 const MainLayout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-[#1E1E1E]  text-white">
+    <div className="min-h-screen w-full overflow-hidden  bg-[#1E1E1E]  text-white">
       <Navbar />
-      <main className=" mx-auto p-4 overflow-y-auto">
-        <ScrollArea>{children}</ScrollArea>
+      <main className=" min-h-screen-[calc(100vh-4rem)] w-full p-4">
+        {children}
       </main>
     </div>
   );

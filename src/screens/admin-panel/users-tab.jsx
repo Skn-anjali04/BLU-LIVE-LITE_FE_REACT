@@ -140,86 +140,82 @@ export function UsersTab({ data, isLoading, isError, error, refetchUsers }) {
     );
   return (
     <Card className="border-0">
-      <CardHeader className="p-4">
-        <div className="flex justify-end">
-          <Button
-            className="bg-[#D3D3D3] hover:bg-gray-400 text-black"
-            onClick={() => setIsCreateDialogOpen(true)}
-          >
-            + Create User
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        {isLoading ? (
-          <CustomLoader />
-        ) : (
-          <div className="overflow-x-auto">
-            <Table className="table-base">
-              <TableHeader>
-                <TableRow className="table-header">
-                  <TableHead>Username</TableHead>
-                  <TableHead>User Role</TableHead>
-                  {/* <TableHead>Status</TableHead> */}
-                  <TableHead>Instance Assigned</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users?.map((user,index) => (
-                  <TableRow key={index} className="table-row">
-                    <TableCell className="rounded-l-md">{user.email}</TableCell>
-                    <TableCell>{user?.userRole?.toLowerCase()}</TableCell>
-                    {/* <TableCell>{user?.status}</TableCell> */}
-                    <TableCell>
-                      <div className="table-actions">
-                        {user?.serviceAssigned?.map((instance,index) => (
-                          <span key={index} className="badge">
-                            {instance.mainServiceName}
-                            <X
-                              className="h-4 w-4 cursor-pointer transition-colors hover:text-red-500"
-                              onClick={() => handleRemoveInstance(user, instance)}
-                            />
-                          </span>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="rounded-r-md p-4">
-                      {["admin", "tech"].includes(
-                        user.userRole.toLowerCase()
-                      ) ? (
-                        <Trash2 className="h-5 w-5 text-gray-400 cursor-not-allowed" />
-                      ) : (
-                        <Trash2
-                          className="h-5 w-5 cursor-pointer  hover:text-black-400 transition-transform duration-300 ease-in-out transform hover:scale-110"
-                          onClick={() => handleDeleteUser(user.email)}
+  <CardHeader className="p-4">
+    <div className="flex justify-end">
+      <Button
+        className="bg-[#D3D3D3] hover:bg-gray-400 text-black"
+        onClick={() => setIsCreateDialogOpen(true)}
+      >
+        + Create User
+      </Button>
+    </div>
+  </CardHeader>
+  <CardContent className="p-4 pt-0">
+    {isLoading ? (
+      <CustomLoader />
+    ) : (
+      <div className="overflow-x-auto">
+        <Table className="table-base">
+          <TableHeader>
+            <TableRow className="table-header">
+              <TableHead>Username</TableHead>
+              <TableHead>User Role</TableHead>
+              <TableHead>Instance Assigned</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="overflow-hidden">
+            {users?.map((user, index) => (
+              <TableRow key={index} className="table-row">
+                <TableCell className="rounded-l-md">{user.email}</TableCell>
+                <TableCell>{user?.userRole?.toLowerCase()}</TableCell>
+                <TableCell className="p-2">
+                  <div className="table-actions">
+                    {user?.serviceAssigned?.map((instance, index) => (
+                      <span key={index} className="badge">
+                        {instance.mainServiceName}
+                        <X
+                          className="h-4 w-4 cursor-pointer transition-colors hover:text-red-500"
+                          onClick={() => handleRemoveInstance(user, instance)}
                         />
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-      <CreateUserDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        refetchUsers={refetchUsers}
-      />
+                      </span>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell className="rounded-r-md p-4">
+                  {["admin", "tech"].includes(user.userRole.toLowerCase()) ? (
+                    <Trash2 className="h-5 w-5 text-gray-400 cursor-not-allowed" />
+                  ) : (
+                    <Trash2
+                      className="h-5 w-5 cursor-pointer hover:text-black-400 transition-transform duration-300 ease-in-out transform hover:scale-110"
+                      onClick={() => handleDeleteUser(user.email)}
+                    />
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    )}
+  </CardContent>
+  <CreateUserDialog
+    open={isCreateDialogOpen}
+    onOpenChange={setIsCreateDialogOpen}
+    refetchUsers={refetchUsers}
+  />
 
-      {actionConfig && (
-        <AlertDialogDelete
-          isOpen={isAlertOpen}
-          onClose={() => setIsAlertOpen(false)}
-          onConfirm={actionConfig.onConfirm}
-          title={actionConfig.title}
-          description={actionConfig.description}
-          confirmText="Yes"
-          cancelText="No"
-        />
-      )}
-    </Card>
+  {actionConfig && (
+    <AlertDialogDelete
+      isOpen={isAlertOpen}
+      onClose={() => setIsAlertOpen(false)}
+      onConfirm={actionConfig.onConfirm}
+      title={actionConfig.title}
+      description={actionConfig.description}
+      confirmText="Yes"
+      cancelText="No"
+    />
+  )}
+</Card>
   );
 }

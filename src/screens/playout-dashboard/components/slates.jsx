@@ -313,9 +313,16 @@ const Slates = React.memo(
     if (!isConfigLoaded) {
       return <div>Loading configuration...</div>;
     }
-    const CheckServiceMain = (instanceDataText === "Primary" && mainServerStatus === false);
-    const CheckBackup = (instanceDataText === "Backup" && backupServerStatus === false);
-
+    const CheckServiceMain =
+      instanceDataText === "Primary" && mainServerStatus === false;
+    const CheckBackup =
+      instanceDataText === "Backup" && backupServerStatus === false;
+    // Reorder slates to show active slate at the top
+    const reorderedSlates = [...slates].sort((a, b) => {
+      if (isBlackoutEnabled && a.name === SlatesActive) return -1;
+      if (isBlackoutEnabled && b.name === SlatesActive) return 1;
+      return 0;
+    });
     return (
       <div>
         <Card className="mt-4 border-0">
@@ -336,7 +343,7 @@ const Slates = React.memo(
               </div>
             ) : (
               <ScrollArea className="h-[200px] bg-zinc-700 rounded-md p-2">
-                {slates.map((slate) => (
+                {reorderedSlates.map((slate) => (
                   <React.Fragment key={slate.name}>
                     <div
                       className={`relative py-1 px-2 hover:bg-zinc-600 rounded cursor-pointer font-medium ${
@@ -378,7 +385,7 @@ const Slates = React.memo(
             <div className="flex justify-end gap-2">
               <Button
                 onClick={handleStart}
-                disabled={isBlackoutEnabled || startFlag || CheckBackup || CheckServiceMain}
+                // disabled={isBlackoutEnabled || startFlag || CheckBackup || CheckServiceMain}
               >
                 {mutationGraphicsStartStop.isPending && startFlag ? (
                   <LoaderCircle className="animate-spin" />
