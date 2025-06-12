@@ -51,7 +51,7 @@ export function Navbar() {
 
       {/* Desktop Instance Info */}
       {showInstanceInfo && instanceName && instanceDataText && (
-        <h1 className="hidden lg:block text-lg xl:text-xl font-bold text-white text-center">
+        <h1 className="hidden md:block text-lg xl:text-xl font-bold text-white text-center">
           {instanceName}
           {instanceDataText && ` (${instanceDataText})`}
         </h1>

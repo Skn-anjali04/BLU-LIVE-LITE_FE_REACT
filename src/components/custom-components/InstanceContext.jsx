@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from "react";
 
 // Create the context
@@ -15,16 +16,24 @@ export function InstanceProvider({ children }) {
     const initializeFromSessionStorage = () => {
       const instanceNameData = JSON.parse(sessionStorage.getItem("instanceName"));
       const instanceAllDataFromSession = JSON.parse(sessionStorage.getItem("DataOFStatus"));
+      const storedInstanceDataText = sessionStorage.getItem("instanceDataText"); // Retrieve instanceDataText
 
       // Set instanceName from sessionStorage if available
       if (instanceNameData) {
-        const { mainServiceName, backupServiceName, mainServiceUID } = instanceNameData;
+        const { mainServiceName, backupServiceName } = instanceNameData;
         const name = mainServiceName || backupServiceName;
         setInstanceName(name);
 
-        // If DataOFStatus exists, set instanceAllData and derive instanceDataText
+        // If DataOFStatus exists, set instanceAllData
         if (instanceAllDataFromSession) {
           setInstanceAllData(instanceAllDataFromSession);
+        }
+
+        // Set instanceDataText from stored value or derive it
+        if (storedInstanceDataText) {
+          setInstanceDataText(storedInstanceDataText); // Use stored value
+        } else if (instanceAllDataFromSession) {
+          const { mainServiceUID } = instanceNameData;
           const dataText = mainServiceUID === instanceAllDataFromSession.mainServiceUID ? "Primary" : "Backup";
           setInstanceDataText(dataText);
         }
@@ -37,7 +46,7 @@ export function InstanceProvider({ children }) {
     };
 
     initializeFromSessionStorage();
-  }, []); // Empty dependency array ensures this runs only on mount (page refresh)
+  }, []); // Empty dependency array ensures this runs only on mount
 
   // Function to update all instance-related data during runtime
   const updateInstanceData = (name, dataText, allData) => {
@@ -45,6 +54,12 @@ export function InstanceProvider({ children }) {
     setInstanceDataText(dataText);
     setInstanceAllData(allData); // Update instanceAllData directly
     setIsInstanceLoaded(true);
+
+    // Store instanceDataText in sessionStorage
+    sessionStorage.setItem("instanceDataText", dataText);
+    // Optionally, update instanceName and DataOFStatus in sessionStorage
+    sessionStorage.setItem("instanceName", JSON.stringify({ mainServiceName: name }));
+    // sessionStorage.setItem("DataOFStatus", JSON.stringify(allData));
   };
 
   return (

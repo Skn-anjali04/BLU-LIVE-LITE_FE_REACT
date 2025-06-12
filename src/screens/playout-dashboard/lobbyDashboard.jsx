@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { useConfig } from "@/components/custom-components/ConfigContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeftFromLineIcon } from "lucide-react";
+import { useInstance } from "@/components/custom-components/InstanceContext";
 
 // Lazy load components
 const Slates = lazy(() => import("./components/slates"));
@@ -112,6 +113,7 @@ const useStableServerStatus = (serverData, isLoading, isFetching, isError) => {
 };
 
 export default function LobbyDashboard() {
+  const { instanceName:instanceTpe, instanceDataText, isInstanceLoaded } = useInstance()
   const navigate = useNavigate();
   const { toast } = useToast();
   const { setMainConfigSync, setBackupConfigSync} = useConfig();
@@ -200,7 +202,8 @@ export default function LobbyDashboard() {
   const getFinalTokens = useCallback(() => {
     if (!ServiceDataCheck) return { mainToken: null, backupToken: null };
     if (ServiceDataCheck?.backupServiceUID) {
-      if (mainServiceUIDCheck === mainServiceUID) {
+      const checkCondition =instanceDataText?.trim() === "Primary";
+      if (mainServiceUIDCheck === mainServiceUID &&checkCondition) {
         return { mainToken: mainServiceToken, backupToken: backupServiceToken };
       }
       return { mainToken: backupServiceToken, backupToken: mainServiceToken };
