@@ -48,7 +48,6 @@ const ScrollComponent = React.memo(({ mutationGraphicsStartStop, backupServerSta
     () => ScrollConfig?.Device?.Template?.Tracks?.VideoTracks[0]?.ScrollingTexts || [],
     [ScrollConfig]
   );
-
   const instanceScrollData = useMemo(() => {
     try {
       return JSON.parse(sessionStorage.getItem("instanceName")) || {};
@@ -138,7 +137,8 @@ const ScrollComponent = React.memo(({ mutationGraphicsStartStop, backupServerSta
   const isAnyScrollActive = useMemo(() => {
     return ScrollActive?.some(
       ({ Enabled, Text }) =>
-        Enabled && scrollItems.some(({ text }) => text === Text)
+        Enabled && scrollItems.some(({ text }) => text.trim().toLowerCase() === Text.trim().toLowerCase())
+      
     );
   }, [ScrollActive, scrollItems]);
 
@@ -171,7 +171,26 @@ const ScrollComponent = React.memo(({ mutationGraphicsStartStop, backupServerSta
     }
 
       const updatedConfig = cloneDeep(ScrollConfig);
-      let CreateScrollObj = {
+      // let CreateScrollObj = {
+      //   BoxColor: "000000",
+      //   BoxHeight: 5,
+      //   BoxTransparency: 100,
+      //   BoxVerticalPosition: 85,
+      //   BoxWidth: 100,
+      //   Direction: "Right to Left",
+      //   Duration: 0,
+      //   Emulation: false,
+      //   Enabled: true,
+      //   FontFile: "default.ttf",
+      //   LoopNumber: 10,
+      //   ScreenTime: 7000,
+      //   ScrollConfiguration: "Screen Time + Duration",
+      //   Text: selectedScroll,
+      //   TextColor: "FFFFFF",
+      //   TextHeight: 100,
+      //   TextTransparency: 0,
+      // };
+        let CreateScrollObj = {
         BoxColor: "000000",
         BoxHeight: 5,
         BoxTransparency: 100,
@@ -182,9 +201,9 @@ const ScrollComponent = React.memo(({ mutationGraphicsStartStop, backupServerSta
         Emulation: false,
         Enabled: true,
         FontFile: "default.ttf",
-        LoopNumber: 10,
-        ScreenTime: 7000,
-        ScrollConfiguration: "Screen Time + Duration",
+        LoopNumber:	100000000,
+        ScreenTime: 13000,
+        ScrollConfiguration: "Loop Number + Screen Time",
         Text: selectedScroll,
         TextColor: "FFFFFF",
         TextHeight: 100,
@@ -474,12 +493,11 @@ const ScrollComponent = React.memo(({ mutationGraphicsStartStop, backupServerSta
             </div>
           ) : (
             scrollItems?.map((item) => {
-              const maxLength = 45;
+              const maxLength =37;
               const shouldTruncate = item.text.length > maxLength;
               const truncatedText = shouldTruncate
                 ? `${item.text.slice(0, maxLength)}...`
                 : item.text;
-
               return (
                 <React.Fragment key={item.id}>
                   <TooltipProvider>
@@ -489,7 +507,7 @@ const ScrollComponent = React.memo(({ mutationGraphicsStartStop, backupServerSta
                           className={`relative py-1 px-2 hover:bg-zinc-600 rounded cursor-pointer font-medium 
                           ${
                             ScrollActive?.some(
-                              ({ Text, Enabled }) => Text === item?.text && Enabled
+                              ({ Text, Enabled }) => Text?.trim()?.toLowerCase() === item?.text?.trim()?.toLowerCase() && Enabled
                             )
                               ? "bg-green-500 hover:!bg-green-500 "
                               : selectedScroll === item?.text
