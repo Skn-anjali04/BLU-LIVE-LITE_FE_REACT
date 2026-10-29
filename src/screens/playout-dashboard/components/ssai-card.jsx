@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useFormik } from "formik";
 import {
   Card,
@@ -39,6 +39,13 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
   const [intervalId, setIntervalId] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [cueInFlag, setCueInFlag] = useState(false);
+  // SSAI ID counter: increments on every successful Cue Out, restarts when the prefix changes
+  const [ssaiCounter, setSsaiCounter] = useState(
+    () => parseInt(sessionStorage.getItem("ssaiCounter"), 10) || 0
+  );
+  const [ssaiPrefix, setSsaiPrefix] = useState(() => sessionStorage.getItem("ssaiPrefix") || "");
+  const [currentId, setCurrentId] = useState(() => sessionStorage.getItem("ssaiCurrentId") || "");
+  const pendingSsaiRef = useRef(null);
   const [ssaiData, setSsaiData] = useState({
     mainacquisitionId: "",
     mainlisteningPort: "",
@@ -53,6 +60,17 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
     method: "POST",
     options: {
       onSuccess: (data) => {
+        if (pendingSsaiRef.current) {
+          const { prefix, counter, id } = pendingSsaiRef.current;
+          setSsaiPrefix(prefix);
+          setSsaiCounter(counter);
+          setCurrentId(id);
+          sessionStorage.setItem("ssaiPrefix", prefix);
+          sessionStorage.setItem("ssaiCounter", counter.toString());
+          sessionStorage.setItem("ssaiCurrentId", id);
+          sessionStorage.setItem("ssaiIdText", formik.values.ssaiId);
+          pendingSsaiRef.current = null;
+        }
         if (formik.values.duration > 0) {
           const now = Date.now();
           setStartTime(now);
@@ -68,6 +86,7 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
         }
       },
       onError: (error) => {
+        pendingSsaiRef.current = null;
         const errorMessage = error.response?.data?.message;
         toast({
           title: "Cue Out Failed",
@@ -201,6 +220,7 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
       acquisitionId: ssaiData?.mainacquisitionId || "",
       repeatInterval: "",
       autoSCTE: false,
+      ssaiId: sessionStorage.getItem("ssaiIdText") || "",
     },
     validate: (values) => {
       const errors = {};
@@ -224,6 +244,19 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
   });
 
   const spliceData = formik.values.ssaiType === "Splice Signaling" ? "splice" : "time";
+  const isTimeSignal = spliceData === "time";
+
+  const handleResetSsaiId = () => {
+    setSsaiCounter(0);
+    setSsaiPrefix("");
+    setCurrentId("");
+    formik.setFieldValue("ssaiId", "");
+    pendingSsaiRef.current = null;
+    sessionStorage.removeItem("ssaiCounter");
+    sessionStorage.removeItem("ssaiPrefix");
+    sessionStorage.removeItem("ssaiCurrentId");
+    sessionStorage.removeItem("ssaiIdText");
+  };
 
   const {
     data: SctyNewData,
@@ -412,10 +445,17 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
       getServiceAllData &&
       ssaiData;
 
+    // SSAI ID / counter apply to Time Signaling only
+    const prefix = formik.values.ssaiId.trim() || "SSAI";
+    const nextCounter = (prefix === ssaiPrefix ? ssaiCounter : 0) + 1;
+    const nextId = `${prefix}${nextCounter}`;
+    const ssaiIdField = isTimeSignal ? { ssaiId: nextId } : {};
+
     let payload;
     if (checkMainBackup) {
       payload = {
         signallingType: spliceData,
+        ...ssaiIdField,
         mainDuration: `${formik.values?.duration}`,
         mainAcquisitionId: formik.values.acquisitionId,
         mainServiceName: getServiceAllData.mainServiceName,
@@ -433,6 +473,7 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
     } else if (checkMain) {
       payload = {
         signallingType: spliceData,
+        ...ssaiIdField,
         mainDuration: `${formik.values?.duration}`,
         mainAcquisitionId: formik.values.acquisitionId,
         mainServiceName: getServiceAllData.mainServiceName,
@@ -445,6 +486,9 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
 
     if (payload) {
       try {
+        pendingSsaiRef.current = isTimeSignal
+          ? { prefix, counter: nextCounter, id: nextId }
+          : null;
         mutationCueOut.mutate({ payload });
       } catch (error) {
         toast({
@@ -484,6 +528,7 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
     if (checkMainBackup) {
       payload = {
         signallingType: spliceData,
+        ...(isTimeSignal ? { ssaiId: currentId } : {}),
         mainAcquisitionId: formik.values.acquisitionId,
         mainServiceName: getServiceAllData.mainServiceName,
         mainServiceUID: getServiceAllData.mainServiceUID,
@@ -499,6 +544,7 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
     } else if (checkMain) {
       payload = {
         signallingType: spliceData,
+        ...(isTimeSignal ? { ssaiId: currentId } : {}),
         mainAcquisitionId: formik.values.acquisitionId,
         mainServiceName: getServiceAllData.mainServiceName,
         mainServiceUID: getServiceAllData.mainServiceUID,
@@ -582,6 +628,36 @@ const SSaiCard = ({ backupServerStatus, mainServerStatus }) => {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {isTimeSignal && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>SSAI ID</Label>
+                      <Input
+                        name="ssaiId"
+                        type="text"
+                        placeholder="SSAI"
+                        maxLength={28}
+                        value={formik.values.ssaiId}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        disabled={isRunning || cueOutFlag === "true"}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Current ID</Label>
+                      <Input name="currentId" value={currentId} disabled={true} />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="mt-6"
+                      onClick={handleResetSsaiId}
+                      disabled={isRunning || cueOutFlag === "true"}
+                    >
+                      Reset
+                    </Button>
+                  </>
+                )}
                 <div className="space-y-2">
                   <Label>Repeat Interval Sec.</Label>
                   <Input
