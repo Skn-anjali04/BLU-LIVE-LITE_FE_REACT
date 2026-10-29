@@ -29,3 +29,6 @@ dist-ssr
 env.js
 public/kenv.js
 *.bak
+
+# VAPT: never commit deployment env/keys, backups or the audit report
+First_Audit_WEB_VAPT_Report_Skandha.docx
