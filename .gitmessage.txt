@@ -1,0 +1,18 @@
+# VCODE-<n>: <imperative summary, <= 72 chars>   <-- keep this line, replace the placeholders
+#
+# ---- body (optional but recommended) ------------------------------ 72 col |
+# Why is this change needed? What does it do? Wrap lines at 72 columns.
+#
+#
+# ---- Jira Smart Commit commands (optional) ------------------------------- |
+# VCODE-<n> #comment <what you did>
+# VCODE-<n> #time 1h 30m
+# VCODE-<n> #review
+#
+# Rules (enforced by .githooks/commit-msg):
+#   - subject MUST contain a Jira key: VCODE-<number>
+#   - subject MUST be <= 72 characters, no trailing period
+#   - imperative mood: "add", "fix", "remove" (not "added" / "fixes")
+#   - blank line between subject and body
+#   - do NOT add "Co-authored-by:" trailers for AI tools (Claude, Copilot, ...)
+# Full guide: docs/GIT-WORKFLOW.md

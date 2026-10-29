@@ -1,0 +1,59 @@
+#!/bin/sh
+# commit-msg — enforce the commit message rules from docs/GIT-WORKFLOW.md
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+# Bypass in an emergency:  git commit --no-verify
+
+# Jira project key for this repo
+JIRA_KEY="VCODE"
+
+msg_file="$1"
+# Git hands the hook the message before it strips comments, so the subject is
+# the first line that is not a "#" comment and not blank ("git commit -v"
+# appends the diff after a scissors line, which is a comment too)
+subject=$(sed '/^# -\{8,\} >8 -\{8,\}$/,$d' "$msg_file" | grep -v '^#' | grep -v '^[[:space:]]*$' | head -n 1)
+
+# let Git's own housekeeping commits through untouched
+case "$subject" in
+  "Merge "*|"Revert "*|"fixup! "*|"squash! "*|"amend! "*)
+    exit 0
+    ;;
+esac
+
+fail() {
+  echo "" >&2
+  echo "  COMMIT REJECTED — $1" >&2
+  echo "  your subject: $subject" >&2
+  echo "" >&2
+  echo "  expected:     $JIRA_KEY-<number>: <imperative summary, <= 72 chars>" >&2
+  echo "  example:      $JIRA_KEY-12: add reorder option to scroll texts" >&2
+  echo "" >&2
+  echo "  see docs/GIT-WORKFLOW.md — bypass with 'git commit --no-verify' only in an emergency." >&2
+  echo "" >&2
+  exit 1
+}
+
+# 1. must reference a Jira ticket
+if ! printf '%s' "$subject" | grep -Eq "(^|[^A-Z])$JIRA_KEY-[0-9]+([^0-9]|\$)"; then
+  fail "the subject line must contain a Jira key like $JIRA_KEY-42"
+fi
+
+# 2. subject length <= 72
+len=$(printf '%s' "$subject" | wc -c | tr -d ' ')
+if [ "$len" -gt 72 ]; then
+  fail "keep the subject line to 72 characters or fewer (currently $len)"
+fi
+
+# 3. no trailing period on the subject
+case "$subject" in
+  *".")
+    fail "no trailing period on the subject line"
+    ;;
+esac
+
+# 4. no AI co-author trailers — the commit author is the developer
+if grep -Eiq '^(co-authored-by|assisted-by|generated-with).*(claude|copilot|chatgpt|gpt-|anthropic|openai|cursor|codeium|gemini)' "$msg_file"; then
+  fail "remove the AI 'Co-authored-by:' trailer — commits are authored by the developer"
+fi
+
+exit 0
