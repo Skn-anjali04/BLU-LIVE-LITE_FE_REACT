@@ -1,0 +1,33 @@
+#!/bin/sh
+# pre-commit — keep the tree healthy before every commit (docs/GIT-WORKFLOW.md)
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+# Bypass in an emergency:  git commit --no-verify
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+
+# 1. block env files and key files (.env.example is the only allowed template)
+blocked=$(printf '%s\n' "$staged" | grep -E '(^|/)\.env(\..+)?$|(^|/)env\.js$|(^|/)kenv\.js$|\.(pem|key|bak)$' | grep -Ev '(^|/)\.env\.example$')
+if [ -n "$blocked" ]; then
+  echo "" >&2
+  echo "  COMMIT REJECTED — secret/environment files are staged:" >&2
+  printf '    %s\n' $blocked >&2
+  echo "  run:  git restore --staged <file>" >&2
+  echo "" >&2
+  exit 1
+fi
+
+# 2. lint staged JS/JSX (only if any are staged)
+staged_js=$(printf '%s\n' "$staged" | grep -E '\.(jsx?|tsx?)$')
+if [ -n "$staged_js" ]; then
+  echo "→ pre-commit: eslint (staged files only)"
+  if ! printf '%s\n' "$staged_js" | xargs npx eslint; then
+    echo "" >&2
+    echo "  COMMIT REJECTED — eslint reported problems (see above)." >&2
+    echo "  fix them, stage the fixes, and commit again." >&2
+    echo "" >&2
+    exit 1
+  fi
+fi
+
+exit 0

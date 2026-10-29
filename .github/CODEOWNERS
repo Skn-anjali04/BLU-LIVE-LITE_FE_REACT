@@ -1,0 +1,10 @@
+# Code Owners — GitHub requests a review from these owners automatically.
+# Required on `main` (see docs/BRANCHING.md branch-protection table).
+
+# Everything, by default — the repository owner / release approver:
+*       @akanojiyaskandha
+
+# Examples of narrower ownership (uncomment / adjust as the team grows):
+# /src/utils/helpers/api/   @your-backend-liaison
+# /docs/                    @your-tech-writer
+# /.github/                 @your-repo-admins
