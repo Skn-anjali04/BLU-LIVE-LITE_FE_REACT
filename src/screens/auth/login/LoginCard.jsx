@@ -12,15 +12,9 @@ import { useApiMutation } from "@/utils/helpers/api/apihooks/useApiMutation";
 import { getLoginPath } from "@/utils/helpers/api/apiConstant";
 import forge from 'node-forge';
 import { encryptData } from "@/utils/helpers/auth/encrypt-decrypt";
-const publicKeyPem = `-----BEGIN PUBLIC KEY-----
-MIIBITANBgkqhkiG9w0BAQEFAAOCAQ4AMIIBCQKCAQB3QOS0UpIZnW+f50H+09cx
-012xPfBetjvp9UyTvxT8IdKsAk+86K/3rtH4BTHflvRxbVdWARUSGEbpvds4jnoa
-jXd3IQf510lPAG7mRc0Y6k5iZ7tAHw/05r2FSgk2j7VCHpkNg7ahBROsJxT4UeyG
-kDlykW35NsVfxOJsYARpKCsw2hsVBFoMNwNT8q7f02PDYBYtxJZfJUKnWhgXOR+/
-lLJLXNfGHre2e7iIH2AKxeOODhZA/Q5nRcjT5uJssj8Ccj7TPkYHcvOu0GNZDu4y
-teFPf5qCctrgxBWm+SBnGfxrYr+VoL/cxkIwQevKrD0ygcJ5lqo1ik4COq9tgo7t
-AgMBAAE=
------END PUBLIC KEY-----`
+// Backend's RSA public key (body only, one line) from .env / .env.production.
+// Must be the pair of the backend's private.key.pem, or login fails to decrypt.
+const publicKeyPem = `-----BEGIN PUBLIC KEY-----\n${import.meta.env.VITE_BLULIVE_RSA_PUBLIC_KEY}\n-----END PUBLIC KEY-----`
 
 export function encryptPassword(password) {
   const publicKey = forge.pki.publicKeyFromPem(publicKeyPem)
