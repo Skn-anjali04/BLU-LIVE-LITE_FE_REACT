@@ -24,6 +24,12 @@ ENV APACHE_DOCUMENT_ROOT /usr/local/apache2/htdocs
 RUN rm -rf /usr/local/apache2/htdocs/*
 COPY --from=build /app/dist /usr/local/apache2/htdocs
 
+# Security headers + no directory listing (VAPT V010-V014, INF002).
+# API_ORIGIN is used in the Content-Security-Policy; override with docker run -e API_ORIGIN=...
+ENV API_ORIGIN=http://34.47.174.27:8000
+COPY apache/bluelive.conf /usr/local/apache2/conf/extra/bluelive.conf
+RUN echo "Include conf/extra/bluelive.conf" >> /usr/local/apache2/conf/httpd.conf
+
 # Expose port 80 for the Apache server
 EXPOSE 80
 
