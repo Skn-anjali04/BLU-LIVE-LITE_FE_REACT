@@ -1,10 +1,9 @@
 import axios from 'axios';
 import { getAccessToken, clearTokens } from '../auth/authService';
-import { API_BASE_URL } from '../config/constants';
 
 // Create an axios instance
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL, // Set your API base URL
+  baseURL: `${import.meta.env.VITE_BLULIVE_API_URL}:${import.meta.env.VITE_BLULIVE_API_PORT}`, // API base URL from .env
   timeout: 10000, // Timeout for requests
 });
 
@@ -36,7 +35,6 @@ export default axiosInstance;
 
 // import axios from 'axios';
 // import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '../auth/authService';
-// import { API_BASE_URL } from '../config/constants';
 
 
 // // Create an axios instance

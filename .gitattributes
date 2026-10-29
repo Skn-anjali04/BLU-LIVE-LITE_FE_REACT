@@ -1,2 +1,5 @@
 # Git hooks run under sh: they must keep LF endings on every OS
 .githooks/* text eol=lf
+
+# Apache config is used in a Linux container
+apache/*.conf text eol=lf
